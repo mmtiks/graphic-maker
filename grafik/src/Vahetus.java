@@ -1,23 +1,23 @@
 public class Vahetus {
-    private int day;
-    private int algus;
-    private int kestvus;
+    private final int kuupaev;
+    private final int algus;
+    private final int kestvus;
     private Isik tootaja = null;
 
     public Vahetus(int day, int algus, int kestvus) {
-        this.day = day;
+        this.kuupaev = day;
         this.algus = algus;
         this.kestvus = kestvus;
     }
 
     public Vahetus(int day, int algus, int kestvus, Isik tootaja) {
-        this.day = day;
+        this.kuupaev = day;
         this.algus = algus;
         this.kestvus = kestvus;
         this.tootaja = tootaja;
     }
-    public int getDay() {
-        return day;
+    public int getKuupaev() {
+        return kuupaev;
     }
     public int getAlgus() {
         return algus;

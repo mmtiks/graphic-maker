@@ -10,56 +10,57 @@ public class Peaklass {
     private static ArrayList<ArrayList<Isik>> tootajad = new ArrayList<>();
 
 
-    public static void generate(int index, int workerIndex, ArrayList<Vahetus> vahetused, ArrayList<Isik> workers) {
+    public static void generate(int index, int workerIndex, ArrayList<Vahetus> vahetused, ArrayList<Isik> tootajad) {
         if (graafikud.size() > 0) {
             return;
         }
         if (vahetused.size() == index) {
             ArrayList<Vahetus> lisand = new ArrayList<>();
             for (Vahetus vahetus : vahetused) {
-                lisand.add(new Vahetus(vahetus.getDay(), vahetus.getAlgus(), vahetus.getKestvus(), vahetus.getTootaja()));
+                lisand.add(new Vahetus(vahetus.getKuupaev(), vahetus.getAlgus(), vahetus.getKestvus(), vahetus.getTootaja()));
             }
             ArrayList<Isik> workerLisand = new ArrayList<>();
-            for (Isik worker : workers) {
-                workerLisand.add(new Isik(worker.getSurname(), worker.getSoovitunnid(), worker.getTunnid()));
+            for (Isik tootaja : tootajad) {
+                workerLisand.add(new Isik(tootaja.getEesnimi(), tootaja.getSoovitunnid(), tootaja.getTunnid(), tootaja.getSoovihommikud(),tootaja.getSooviohtud()));
             }
-            tootajad.add(workerLisand);
+            Peaklass.tootajad.add(workerLisand);
             graafikud.add(lisand);
             return;
         }
-        int placeholder;
+        int eelmineVaartus;
         Vahetus vahetus = vahetused.get(index);
+        int vahetuseKuupaev = vahetus.getKuupaev();
         boolean hommik = vahetus.getAlgus() <= 14;
-        for (Isik worker : workers) {
-            if (hommik) {
-                placeholder = worker.getViimanehommik();
-            } else {
-                placeholder = worker.getViimaneohtu();
-            }
+        for (int k = workerIndex; k < workerIndex + tootajad.size(); k++) {
+            Isik tootaja = tootajad.get(k % tootajad.size());
+            int tootajaTunnid = tootaja.getTunnid();
             //tunnid pole veel tais
-            if (worker.getTunnid() + vahetus.getKestvus() < worker.getSoovitunnid()) {
+            if (tootajaTunnid + vahetus.getKestvus() < tootaja.getSoovitunnid()) {
                 // pole hommikuvahetus voi siis pole soovihommik
-                if (!hommik || Arrays.stream(worker.getSoovihommikud()).noneMatch(i -> i == vahetus.getDay())) {
+                if (!(hommik && Arrays.stream(tootaja.getSoovihommikud()).anyMatch(i -> i == vahetuseKuupaev))) {
                     // pole ohtuvahetus voi siis pole sooviohtu
-                    if (hommik || Arrays.stream(worker.getSoovihommikud()).noneMatch(i -> i == vahetus.getDay())) {
+                    if (!(!hommik && Arrays.stream(tootaja.getSooviohtud()).anyMatch(i -> i == vahetuseKuupaev))) {
                         // pole juba sellel paeval tool
-                        if (worker.getViimanehommik() != vahetus.getDay() && worker.getViimaneohtu() != vahetus.getDay()) {
+                        if (tootaja.getViimanehommik() != vahetus.getKuupaev() && tootaja.getViimaneohtu() != vahetuseKuupaev) {
                             //
-                            if (!(hommik && worker.getViimaneohtu() == vahetus.getDay() - 1)) {
-                                vahetused.get(index).setTootaja(worker);
-                                worker.setTunnid(worker.getTunnid() + vahetus.getKestvus());
+                            if (!(hommik && tootaja.getViimaneohtu() == vahetuseKuupaev - 1)) {
+                                vahetused.get(index).setTootaja(tootaja);
+                                tootaja.setTunnid(tootajaTunnid + vahetus.getKestvus());
                                 if (hommik) {
-                                    worker.setViimanehommik(vahetus.getDay());
+                                    eelmineVaartus = tootaja.getViimanehommik();
+                                    tootaja.setViimanehommik(vahetuseKuupaev);
                                 } else {
-                                    worker.setViimaneohtu(vahetus.getDay());
+                                    eelmineVaartus = tootaja.getViimaneohtu();
+                                    tootaja.setViimaneohtu(vahetuseKuupaev);
                                 }
-                                generate(index + 1, workerIndex, vahetused, workers);
 
-                                worker.setTunnid(worker.getTunnid() - vahetus.getKestvus());
+                                generate(index + 1, workerIndex + 1, vahetused, tootajad);
+
+                                tootaja.setTunnid(tootaja.getTunnid() - vahetus.getKestvus());
                                 if (hommik) {
-                                    worker.setViimanehommik(placeholder);
+                                    tootaja.setViimanehommik(eelmineVaartus);
                                 } else {
-                                    worker.setViimaneohtu(placeholder);
+                                    tootaja.setViimaneohtu(eelmineVaartus);
                                 }
                             }
                         }
@@ -71,81 +72,70 @@ public class Peaklass {
 
 
     public static void main(String[] args) {
-
+        long start = System.currentTimeMillis();
         // loeme sisse tootajate andmed
         ArrayList<Isik> workers = new ArrayList();
         try {
-            File tootajad = new File("tootajad.txt");
+            File tootajad = new File("C:\\Users\\Mihkel\\Documents\\GitHub\\graphic-maker\\tootajad.txt");
             Scanner myReader = new Scanner(tootajad);
             while (myReader.hasNextLine()) {
                 String[] data = myReader.nextLine().split(";");
-                int[] soovihommikud = Stream.of(data[1].split(",")).mapToInt(Integer::parseInt).toArray();
-                int[] sooviohtud = Stream.of(data[2].split(",")).mapToInt(Integer::parseInt).toArray();
-                String[] muu = data[0].split(" ");
-                workers.add(new Isik(muu[0], Integer.parseInt(muu[1]), soovihommikud, sooviohtud));
+                int[] soovihommikud = Stream.of(data[2].split(",")).mapToInt(Integer::parseInt).toArray();
+                int[] sooviohtud = Stream.of(data[3].split(",")).mapToInt(Integer::parseInt).toArray();
+                workers.add(new Isik(data[0], Integer.parseInt(data[1]), soovihommikud, sooviohtud));
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
 
-
         // loome vahetused
-        ArrayList<Vahetus> vahetused = new ArrayList<Vahetus>();
+        ArrayList<Vahetus> vahetused = new ArrayList<>();
         int i = 1;
-        while (i < 8) {
+        while (i < 29) {
             switch (i % 7) {
-                case 2:
+                case 2 -> {
                     vahetused.add(new Vahetus(i, 10, 8));
                     vahetused.add(new Vahetus(i, 10, 8));
-                    vahetused.add(new Vahetus(i,18,7));
-                    vahetused.add(new Vahetus(i,18,7));
-                    vahetused.add(new Vahetus(i,17,6));
-                    break;
-                case 3:
+                    vahetused.add(new Vahetus(i, 18, 7));
+                    vahetused.add(new Vahetus(i, 18, 7));
+                    vahetused.add(new Vahetus(i, 17, 6));
+                }
+                case 3 -> {
                     vahetused.add(new Vahetus(i, 10, 8));
                     vahetused.add(new Vahetus(i, 10, 8));
                     vahetused.add(new Vahetus(i, 18, 6));
-                    vahetused.add(new Vahetus(i,18,6));
-                    break;
-                case 4:
+                    vahetused.add(new Vahetus(i, 18, 6));
+                }
+                case 4 -> {
                     vahetused.add(new Vahetus(i, 10, 8));
                     vahetused.add(new Vahetus(i, 10, 8));
-                    vahetused.add(new Vahetus(i,18,8));
-                    vahetused.add(new Vahetus(i,18,8));
-                    vahetused.add(new Vahetus(i,18,5));
-                    break;
-                case 5:
+                    vahetused.add(new Vahetus(i, 18, 8));
+                    vahetused.add(new Vahetus(i, 18, 8));
+                    vahetused.add(new Vahetus(i, 18, 5));
+                }
+                case 5, 6 -> {
                     vahetused.add(new Vahetus(i, 17, 10));
                     vahetused.add(new Vahetus(i, 15, 5));
                     vahetused.add(new Vahetus(i, 17, 10));
-                    vahetused.add(new Vahetus(i,10,10));
-                    vahetused.add(new Vahetus(i,19,9));
-                    vahetused.add(new Vahetus(i,20,8));
-                    vahetused.add(new Vahetus(i,21,8));
-                    vahetused.add(new Vahetus(i,18,10));
-                    vahetused.add(new Vahetus(i,10,10));
-                    break;
-                case 6:
-                    vahetused.add(new Vahetus(i, 17, 10));
-                    vahetused.add(new Vahetus(i, 15, 5));
-                    vahetused.add(new Vahetus(i,17,10));
-                    vahetused.add(new Vahetus(i,10,10));
-                    vahetused.add(new Vahetus(i,19,9));
-                    vahetused.add(new Vahetus(i,20,8));
-                    vahetused.add(new Vahetus(i,21,8));
-                    vahetused.add(new Vahetus(i,18,10));
-                    vahetused.add(new Vahetus(i,10,10));
-                    break;
+                    vahetused.add(new Vahetus(i, 10, 10));
+                    vahetused.add(new Vahetus(i, 19, 9));
+                    vahetused.add(new Vahetus(i, 20, 8));
+                    vahetused.add(new Vahetus(i, 21, 8));
+                    vahetused.add(new Vahetus(i, 18, 10));
+                    vahetused.add(new Vahetus(i, 10, 10));
+                }
             }
             i++;
         }
 
         generate(0,0, vahetused, workers);
         for (Vahetus v : graafikud.get(0)) {
-            System.out.println(v.getDay() + "/ algus : " + v.getAlgus() + "/ kestvus:" + v.getKestvus() + "/ teeb: " + v.getTootaja().getSurname());
+            System.out.println(v.getKuupaev() + "/ algus : " + v.getAlgus() + "/ kestvus:" + v.getKestvus() + "/ teeb: " + v.getTootaja().getEesnimi() + "/ hommikuvahetus: " +  (v.getAlgus()<=14));
         }
-        for (Isik is : tootajad.get(0)) {
-            System.out.println(is.getSurname() + ": " + is.getTunnid() + " " + is.getSoovitunnid());
-        }
+//        for (Isik is : tootajad.get(0)) {
+//            System.out.println(is.getSurname() + ": " + is.getTunnid() + " " + is.getSoovitunnid());
+//        }
+        long stop = System.currentTimeMillis();
+        System.out.println(stop-start);
     }
 }
