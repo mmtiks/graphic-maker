@@ -15,6 +15,7 @@ public class Peaklass {
             return;
         }
         if (vahetused.size() == index) {
+            System.out.println("tere");
             ArrayList<Vahetus> lisand = new ArrayList<>();
             for (Vahetus vahetus : vahetused) {
                 lisand.add(new Vahetus(vahetus.getKuupaev(), vahetus.getAlgus(), vahetus.getKestvus(), vahetus.getTootaja()));
@@ -91,7 +92,7 @@ public class Peaklass {
         // loome vahetused
         ArrayList<Vahetus> vahetused = new ArrayList<>();
         int i = 1;
-        while (i < 29) {
+        while (i < 7) {
             switch (i % 7) {
                 case 2 -> {
                     vahetused.add(new Vahetus(i, 10, 8));
