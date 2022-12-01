@@ -4,13 +4,17 @@ import java.util.ArrayList;
 public class Isik {
     private final String eesnimi;
     private String perenimi;
-    private final int soovitunnid;
+    private int soovitunnid;
     private int tunnid = 0;
     private int viimanehommik = 0;
     private int viimaneohtu = 0;
-    private final int[] soovihommikud;
-    private final int[] sooviohtud;
+    private int[] soovihommikud;
+    private int[] sooviohtud;
     private ArrayList<Vahetus> vahetused = new ArrayList<>();
+
+    public Isik(String eesnimi) {
+        this.eesnimi = eesnimi;
+    }
 
     public Isik(String surname, int soovitunnid, int[] soovihommikud, int[] sooviohtud) {
         this.eesnimi = surname;
